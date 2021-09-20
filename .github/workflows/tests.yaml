@@ -9,6 +9,4 @@ jobs:
         uses: actions/checkout@v2
       - name: Run test cases
         id: hello
-        runs:
-          using: 'docker'
-          image: 'Dockerfile'
+        uses: ./
