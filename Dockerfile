@@ -15,4 +15,4 @@ RUN autoreconf -vif -I m4
 RUN pip3 install Biopython numpy
 RUN ./configure --prefix=/usr 
 
-CMD ["make -j1 distcheck"]
+CMD make -j1 distcheck
