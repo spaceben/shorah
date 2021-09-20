@@ -1,0 +1,5 @@
+name: 'Tests'
+description: 'Runs distcheck'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
