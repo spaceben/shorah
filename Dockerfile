@@ -14,4 +14,5 @@ RUN autoreconf -vif -I m4
 RUN pip3 install Biopython numpy
 RUN ./configure 
 
-ENTRYPOINT ["make"]
+#ENTRYPOINT ["make", "-j1", "distcheck"]
+ENTRYPOINT echo "$PWD"
