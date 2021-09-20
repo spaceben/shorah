@@ -5,6 +5,10 @@ jobs:
     runs-on: ubuntu-latest
     name: Tests
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Run test cases
         id: hello
-        uses: actions/test-action@v1
+        runs:
+          using: 'docker'
+          image: 'Dockerfile'
