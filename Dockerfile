@@ -7,12 +7,13 @@ RUN apt-get update -y && \
 
 SHELL ["/bin/bash", "-c"]
 
-WORKDIR /usr/app
+#WORKDIR /usr/app
 COPY . .
 
 RUN autoreconf -vif -I m4
 
 RUN pip3 install Biopython numpy
-RUN ./configure --prefix=/usr 
+RUN ./configure 
+#--prefix=/usr 
 
-ENTRYPOINT make -j1 distcheck
+ENTRYPOINT ["make", "-j1", "distcheck"]
