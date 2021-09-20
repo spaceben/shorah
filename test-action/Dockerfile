@@ -8,7 +8,7 @@ RUN apt-get update -y && \
 SHELL ["/bin/bash", "-c"]
 
 WORKDIR /usr/app
-COPY . .
+COPY .. .
 
 RUN autoreconf -vif -I m4
 

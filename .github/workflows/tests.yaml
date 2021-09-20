@@ -1,5 +1,10 @@
-name: 'Tests'
-description: 'Runs distcheck'
-runs:
-  using: 'docker'
-  image: 'Dockerfile'
+on: [push]
+
+jobs:
+  tests_job:
+    runs-on: ubuntu-latest
+    name: Tests
+    steps:
+      - name: Run test cases
+        id: hello
+        uses: actions/test-action@v1
