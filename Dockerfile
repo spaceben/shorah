@@ -7,12 +7,8 @@ RUN apt-get update -y && \
 
 SHELL ["/bin/bash", "-c"]
 
+RUN pip3 install Biopython numpy
+
 COPY . .
 
-RUN autoreconf -vif -I m4
-
-RUN pip3 install Biopython numpy
-RUN ./configure 
-
-#ENTRYPOINT ["make", "-j1", "distcheck"]
-ENTRYPOINT ls -l
+ENTRYPOINT ["/entrypoint.sh"]
