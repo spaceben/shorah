@@ -15,4 +15,4 @@ RUN pip3 install Biopython numpy
 RUN ./configure 
 
 #ENTRYPOINT ["make", "-j1", "distcheck"]
-ENTRYPOINT echo "$PWD"
+ENTRYPOINT ls -l
