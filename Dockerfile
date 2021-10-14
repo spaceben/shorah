@@ -16,4 +16,4 @@ ENV PYTHONPATH=/src
 
 RUN ["/entrypoint.sh"]
 
-CMD pip install pytest && cd /tests/b2w && pytest
+#CMD pip install pytest && cd /tests/b2w && pytest

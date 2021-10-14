@@ -15,7 +15,7 @@ def _run_one_window(samfile, region_start, reference_name, window_length,
         region_start + window_length # arg exclusive as per pysam convention
     ) 
 
-    for read in iter:
+    for idx, read in enumerate(iter):
         # For loop limited by maximum_reads 
         # TODO might not be random 
         #if read_idx > maximum_reads: 
@@ -60,12 +60,11 @@ def _run_one_window(samfile, region_start, reference_name, window_length,
             arr.append(
                 f'>{read.query_name} {first_aligned_pos}\n{cut_out_read}'
             )
-            arr_read_summary.append((
-                read.query_name, 
-                read.reference_start + 1, # conversion to 1-based
-                read.reference_end, # already 1-based
-                read.query_sequence
-            ))
+
+            if idx > window_length//3:
+                arr_read_summary.append( # TODO reads.fas not FASTA conform, +-0/1
+                    f'{read.query_name}\t2267\t3914\t{read.reference_start + 1}\t{read.reference_end}\t{read.query_sequence}'
+                )
 
     return arr, arr_read_summary
 
@@ -104,8 +103,9 @@ def b2w(window_length: int, incr: int, minimum_overlap: int, maximum_reads: int,
     )
 
     cov_arr = []
+    arr_read_summary_all = []
     for region_start in window_positions:
-        arr = _run_one_window(
+        arr, arr_read_summary = _run_one_window(
             samfile, 
             region_start, 
             reference_name, 
@@ -125,10 +125,13 @@ def b2w(window_length: int, incr: int, minimum_overlap: int, maximum_reads: int,
                 f'{region_end}\t{len(arr)}'
             )
             cov_arr.append(line)
+
+            arr_read_summary_all.extend(arr_read_summary)
         
     samfile.close()
 
     _write_to_file(cov_arr, "coverage.txt")
+    _write_to_file(arr_read_summary_all, "reads.fas")
 
 
 def main():
