@@ -71,11 +71,13 @@ def _run_one_window(samfile, region_start, reference_name, window_length,
 
 def b2w(window_length: int, incr: int, minimum_overlap: int, maximum_reads: int, 
         minimum_reads: int) -> None:
-    """
-    Creates three products:
-    (1) Multiple FASTA files (one for each window position)
-    (2) A coverage file that lists all files in (1)
-    (3) A FASTA file that lists all reads used in (1) #TODO not really FASTA
+    """Summarizes reads aligned to reference into windows. 
+
+    Three products are created:
+
+    #. Multiple FASTA files (one for each window position)
+    #. A coverage file that lists all files in (1)
+    #. A FASTA file that lists all reads used in (1) #TODO not really FASTA
 
     Args:
         window_length: Number of bases considered at once per loop.
