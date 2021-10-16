@@ -10,8 +10,11 @@ SHELL ["/bin/bash", "-c"]
 COPY requirements.txt .
 RUN pip3 install -r requirements.txt
 
-COPY . .
+COPY . ./usr/app
 
-ENTRYPOINT ["/entrypoint.sh"]
+# GitHub Actions chimes in here and sets docker's WORKDIR=${GITHUB_WORKSPACE}
+# https://docs.github.com/en/actions/creating-actions/dockerfile-support-for-github-actions#workdir
+
+ENTRYPOINT ["./entrypoint.sh"]
 
 CMD pip install pytest && cd ./tests/b2w && pytest

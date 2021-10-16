@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export PYTHONPATH=/src
+export PYTHONPATH=$(pwd)/src
 
 autoreconf -vif -I m4
 ./configure 
