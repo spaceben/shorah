@@ -31,7 +31,7 @@ def _run_one_window(samfile, region_start, reference_name, window_length,
             start_cut_out = region_start - first_aligned_pos - 1
 
             end_cut_out = start_cut_out + window_length 
-            print(f"{start_cut_out} {end_cut_out}")
+
             s = slice(max(0, start_cut_out), end_cut_out)
             cut_out_read = list(read.query_sequence)
             
@@ -48,7 +48,6 @@ def _run_one_window(samfile, region_start, reference_name, window_length,
             # TODO justify 2
             k = (region_start + window_length) - last_aligned_post - 2 
             if k > 0:
-                print(k)
                 cut_out_read = cut_out_read + k * "N" 
             if start_cut_out < 0:
                 cut_out_read = -start_cut_out * "N" + cut_out_read
@@ -61,7 +60,7 @@ def _run_one_window(samfile, region_start, reference_name, window_length,
                 f'>{read.query_name} {first_aligned_pos}\n{cut_out_read}'
             )
 
-            if idx > window_length//3:
+            if idx < window_length or idx > window_length//3:
                 arr_read_summary.append( # TODO reads.fas not FASTA conform, +-0/1
                     f'{read.query_name}\t2267\t3914\t{read.reference_start + 1}\t{read.reference_end}\t{read.query_sequence}'
                 )

@@ -12,8 +12,6 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
-ENV PYTHONPATH=/src
+ENTRYPOINT ["/entrypoint.sh"]
 
-RUN ["/entrypoint.sh"]
-
-#CMD pip install pytest && cd /tests/b2w && pytest
+CMD pip install pytest && cd ./tests/b2w && pytest
