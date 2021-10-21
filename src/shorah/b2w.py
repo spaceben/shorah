@@ -1,4 +1,5 @@
 import pysam
+from typing import Optional
 
 def _parse_region(region):
     tmp = region.split(":")
@@ -17,6 +18,7 @@ def _run_one_window(samfile, region_start, reference_name, window_length,
 
     arr = []
     arr_read_summary = []
+    counter_unchanged = True
 
     iter = samfile.fetch(
         reference_name, 
@@ -77,15 +79,17 @@ def _run_one_window(samfile, region_start, reference_name, window_length,
                 f'{read.query_name}\t2267\t3914\t{read.reference_start + 1}\t{read.reference_end}\t{full_read}'
             )
             counter = read.reference_start
+            counter_unchanged = False
 
-    counter = counter + 1
-    print(f'GLOBAL: {counter}')
+    if not counter_unchanged:
+        counter = counter + 1
 
     return arr, arr_read_summary, counter
 
 
-def b2w(window_length: int, incr: int, minimum_overlap: int, maximum_reads: int, 
-        minimum_reads: int) -> None:
+def build_windows(alignment_file: str, region: str, window_length: int, 
+        incr: int, minimum_overlap: int, maximum_reads: int, minimum_reads: int, 
+        reference_filename: Optional[str] = None) -> None:
     """Summarizes reads aligned to reference into windows. 
 
     Three products are created:
@@ -95,27 +99,33 @@ def b2w(window_length: int, incr: int, minimum_overlap: int, maximum_reads: int,
     #. A FASTA file that lists all reads used in (1) #TODO not really FASTA
 
     Args:
+        alignment_file: Path to the alignment file in CRAM format.
+        region: A genomic sequence compatibile with samtools. 
+            Example: "chr1:10000-20000"
         window_length: Number of bases considered at once per loop.
         incr: Increment between each window.
         minimum_overlap: Minimum number of bases to overlap between reference
-            and read to be considered in a window.
+            and read to be considered in a window. The rest (i.e. 
+            non-overlapping part) will be filled with Ns.
         maximum_reads: Upper (inclusive) limit of reads allowed in a window.
             Serves to reduce computational load.
         minimum_reads: Lower (inclusive) limit of reads allowed in a window.
             Serves to omit windows with low coverage.
-        
-    Returns:
-        None.
+        reference_filename: Path to a FASTA file of the reference sequence.
+            Only necessary if this information is not included in the CRAM file.
     """
-    alignment_file = "data/test_aln.cram" # TODO
-    region = "HXB2:2469-3713"
     reference_name, start, end = _parse_region(region)
 
     pysam.index(alignment_file)
-    samfile = pysam.AlignmentFile(alignment_file, "rc")
+    samfile = pysam.AlignmentFile(
+        alignment_file, 
+        "rc", 
+        reference_filename,
+        threads=1
+    )
 
     window_positions = range(
-        start - window_length, # TODO corrected start
+        start - window_length,
         end + window_length, 
         incr 
     )
@@ -154,9 +164,14 @@ def b2w(window_length: int, incr: int, minimum_overlap: int, maximum_reads: int,
 
     _write_to_file(cov_arr, "coverage.txt")
     _write_to_file(arr_read_summary_all, "reads.fas")
+    
 
+if __name__ == "__main__":
+    print("main")
 
-def main():
+    #if args.d == True:
+    #    raise NotImplementedError # TODO
+
     """
         -w: window length (INT)
         -i: increment (INT)
@@ -168,23 +183,3 @@ def main():
             (alternate behaviour)
         -h: show this help
     """
-
-    #if args.d == True:
-    #    raise NotImplementedError # TODO
-
-    window_length = 201
-    incr = window_length//3
-
-    # if read covers at least win_min_ext fraction of the window, 
-    # fill it with Ns
-    win_min_ext = 0.85 
-
-    b2w(
-        window_length, 
-        incr, 
-        window_length * win_min_ext, 
-        1e4 / window_length, # TODO why divide?
-        0
-    )
-
-    print("main")

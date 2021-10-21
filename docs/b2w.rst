@@ -23,4 +23,4 @@ API
 .. caution::
    ``reads.fas`` does not comply with the FASTA format.    
 
-.. autofunction:: shorah.b2w.b2w
+.. autofunction:: shorah.b2w.build_windows
