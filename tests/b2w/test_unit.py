@@ -2,6 +2,7 @@ import filecmp
 import os
 import glob
 from shorah import b2w
+import math
 
 def test_cmp_raw():
     window_length = 201
@@ -12,7 +13,7 @@ def test_cmp_raw():
         region = "HXB2:2469-3713",
         window_length = 201, 
         incr = window_length//3, 
-        minimum_overlap = window_length * win_min_ext, 
+        minimum_overlap = math.floor(window_length * win_min_ext), 
         maximum_reads = 1e4 / window_length, # TODO why divide?
         minimum_reads = 0
     )

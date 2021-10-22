@@ -1,4 +1,5 @@
 import pysam
+import os 
 from typing import Optional
 
 def _parse_region(region):
@@ -120,7 +121,7 @@ def build_windows(alignment_file: str, region: str, window_length: int,
     samfile = pysam.AlignmentFile(
         alignment_file, 
         "rc", 
-        reference_filename,
+        reference_filename=reference_filename,
         threads=1
     )
 
@@ -130,7 +131,7 @@ def build_windows(alignment_file: str, region: str, window_length: int,
         incr 
     )
 
-    print(window_positions)
+    print(samfile.lengths)
 
     cov_arr = []
     arr_read_summary_all = []
@@ -167,19 +168,44 @@ def build_windows(alignment_file: str, region: str, window_length: int,
     
 
 if __name__ == "__main__":
-    print("main")
+    import argparse
 
-    #if args.d == True:
-    #    raise NotImplementedError # TODO
+    # Naming as in original C version
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('-w', '--window_length', nargs=1, type=int, 
+        help='window length', required=True)
+    parser.add_argument('-i', '--incr', nargs=1, type=int, help='increment', 
+        required=True)
+    parser.add_argument('-m', nargs=1, type=int, help='minimum overlap', 
+        required=True)
+    parser.add_argument('-x', nargs=1, type=int, 
+        help='max reads starting at a position', required=True)
+    parser.add_argument('-c', nargs=1, type=int, 
+        help='coverage threshold. Omit windows with low coverage.', 
+        required=True)
 
-    """
-        -w: window length (INT)
-        -i: increment (INT)
-        -m: minimum overlap (INT)
-        -x: max reads starting at a position (INT)
-        -c: coverage threshold. Omit windows with low coverage (INT)
+    parser.add_argument('-d', nargs='?', 
+        help='drop SNVs that are adjacent to insertions/deletions (alternate behaviour).', 
+        const=True)
 
-        -d: drop SNVs that are adjacent to insertions/deletions 
-            (alternate behaviour)
-        -h: show this help
-    """
+    parser.add_argument('alignment_file', metavar='ALG', type=str)
+    parser.add_argument('region', metavar='REG', type=str)
+
+
+    args = parser.parse_args()
+
+    print(args.window_length[0])
+
+    if args.d != None:
+        raise NotImplementedError('This argument was deprecated.')
+
+    window_length = 201
+    build_windows(
+        alignment_file = args.alignment_file, #"data/test_aln.cram",
+        region = args.region, #"HXB2:2469-3713",
+        window_length = args.window_length[0], 
+        incr = args.incr[0], 
+        minimum_overlap = args.m[0], 
+        maximum_reads = args.x[0], # 1e4 / window_length, TODO why divide?
+        minimum_reads = args.c[0]
+    )
