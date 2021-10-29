@@ -55,8 +55,8 @@ def _run_one_window(samfile, region_start, reference_name, window_length,
         full_read = ("".join(full_read))
         
         if (first_aligned_pos < region_start + window_length - minimum_overlap  
-                and last_aligned_post >= region_start + minimum_overlap - 4): 
-                # TODO justify 4
+                and last_aligned_post >= region_start + minimum_overlap - 3): 
+                # TODO justify 3
 
             cut_out_read = full_read[s]
 
@@ -75,7 +75,7 @@ def _run_one_window(samfile, region_start, reference_name, window_length,
                 f'>{read.query_name} {first_aligned_pos}\n{cut_out_read}'
             )
 
-        if read.reference_start >= counter and len(full_read) >= minimum_overlap:
+        if read.reference_start >= counter and len(full_read) >= minimum_overlap: # TODO does not bind
             arr_read_summary.append( # TODO reads.fas not FASTA conform, +-0/1
                 f'{read.query_name}\t2267\t3914\t{read.reference_start + 1}\t{read.reference_end}\t{full_read}'
             )
@@ -120,7 +120,7 @@ def build_windows(alignment_file: str, region: str, window_length: int,
     pysam.index(alignment_file)
     samfile = pysam.AlignmentFile(
         alignment_file, 
-        "rc", 
+        "r", # TODO auto-detect bam/cram (rc)
         reference_filename=reference_filename,
         threads=1
     )
@@ -130,8 +130,6 @@ def build_windows(alignment_file: str, region: str, window_length: int,
         end + window_length, 
         incr 
     )
-
-    print(samfile.lengths)
 
     cov_arr = []
     arr_read_summary_all = []
@@ -171,7 +169,7 @@ if __name__ == "__main__":
     import argparse
 
     # Naming as in original C version
-    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser = argparse.ArgumentParser(description='b2w.')
     parser.add_argument('-w', '--window_length', nargs=1, type=int, 
         help='window length', required=True)
     parser.add_argument('-i', '--incr', nargs=1, type=int, help='increment', 
@@ -194,15 +192,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print(args.window_length[0])
-
     if args.d != None:
         raise NotImplementedError('This argument was deprecated.')
 
     window_length = 201
     build_windows(
-        alignment_file = args.alignment_file, #"data/test_aln.cram",
-        region = args.region, #"HXB2:2469-3713",
+        alignment_file = args.alignment_file,
+        region = args.region,
         window_length = args.window_length[0], 
         incr = args.incr[0], 
         minimum_overlap = args.m[0], 
