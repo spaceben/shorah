@@ -14,8 +14,8 @@ def _collect_files(base_path):
     return spec_files
 
 @pytest.mark.parametrize("spec_dir,alignment_file,reference_file,region,window_length", [
-    #("data_1", "test_aln.cram", "test_ref.fasta", "HXB2:2469-3713", 201), 
-    ("data_1", "test_aln.cram", "test_ref.fasta", "HXB2:2469-3713", 204), 
+    ("data_1", "test_aln.cram", "test_ref.fasta", "HXB2:2469-3713", 201), 
+    #("data_1", "test_aln.cram", "test_ref.fasta", "HXB2:2469-3713", 204), 
     #("data_2", "REF_aln.bam", "cohort_consensus.fasta", "HXB2:2508-3676")
 ], indirect=["spec_dir"])
 def test_cmp_raw(spec_dir, alignment_file, reference_file, region, window_length):
@@ -62,9 +62,9 @@ def spec_dir(request):
     # execute after test function, cleanup
     spec_files = _collect_files(os.path.join(p, request.param))
     created_files = _collect_files(p)
-    """"
+    
     for file in spec_files:
         os.remove(os.path.join(p, request.param, file))
     for file in created_files:
         os.remove(os.path.join(p, file))
-    """
+    
