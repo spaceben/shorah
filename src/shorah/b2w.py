@@ -1,6 +1,7 @@
 import pysam
-import os 
 from typing import Optional
+from shorah import tiling
+from shorah.tiling import TilingStrategy, EquispacedTilingStrategy
 
 def _parse_region(region):
     tmp = region.split(":")
@@ -8,7 +9,7 @@ def _parse_region(region):
     tmp = tmp[1].split("-")
     start = int(tmp[0]) 
     end = int(tmp[1]) 
-    return reference_name, start, end # indexed 1 like samtools
+    return reference_name, start, end # indexed 1, like samtools
 
 def _write_to_file(lines, file_name):
     with open(file_name, "w") as f:
@@ -54,7 +55,7 @@ def _run_one_window(samfile, region_start, reference_name, window_length,
         
         full_read = ("".join(full_read))
         
-        if (first_aligned_pos < region_start + window_length - minimum_overlap  
+        if (first_aligned_pos < region_start + window_length - minimum_overlap
                 and last_aligned_post >= region_start + minimum_overlap - 3): 
                 # TODO justify 3
 
@@ -76,8 +77,8 @@ def _run_one_window(samfile, region_start, reference_name, window_length,
             )
 
         if read.reference_start >= counter and len(full_read) >= minimum_overlap: # TODO does not bind
-            arr_read_summary.append( # TODO reads.fas not FASTA conform, +-0/1
-                f'{read.query_name}\t2267\t3914\t{read.reference_start + 1}\t{read.reference_end}\t{full_read}'
+            arr_read_summary.append(
+                (read.query_name, read.reference_start + 1, read.reference_end, full_read)
             )
             counter = read.reference_start
             counter_unchanged = False
@@ -88,9 +89,9 @@ def _run_one_window(samfile, region_start, reference_name, window_length,
     return arr, arr_read_summary, counter
 
 
-def build_windows(alignment_file: str, region: str, window_length: int, 
-        incr: int, minimum_overlap: int, maximum_reads: int, minimum_reads: int, 
-        reference_filename: Optional[str] = None) -> None:
+def build_windows(alignment_file: str, region: str, 
+    tiling_strategy: TilingStrategy, minimum_overlap: int, maximum_reads: int, 
+    minimum_reads: int, reference_filename: Optional[str] = None) -> None:
     """Summarizes reads aligned to reference into windows. 
 
     Three products are created:
@@ -103,8 +104,7 @@ def build_windows(alignment_file: str, region: str, window_length: int,
         alignment_file: Path to the alignment file in CRAM format.
         region: A genomic sequence compatibile with samtools. 
             Example: "chr1:10000-20000"
-        window_length: Number of bases considered at once per loop.
-        incr: Increment between each window.
+        tiling_strategy: A strategy on how the genome is partitioned.
         minimum_overlap: Minimum number of bases to overlap between reference
             and read to be considered in a window. The rest (i.e. 
             non-overlapping part) will be filled with Ns.
@@ -120,21 +120,16 @@ def build_windows(alignment_file: str, region: str, window_length: int,
     pysam.index(alignment_file)
     samfile = pysam.AlignmentFile(
         alignment_file, 
-        "r", # TODO auto-detect bam/cram (rc)
+        "r", # auto-detect bam/cram (rc)
         reference_filename=reference_filename,
         threads=1
     )
 
-    window_positions = range(
-        start - window_length,
-        end + window_length, 
-        incr 
-    )
-
     cov_arr = []
-    arr_read_summary_all = []
+    reads = open("reads.fas", "w")
     counter = 0
-    for region_start in window_positions:
+    tiling = tiling_strategy.get_window_tilings(start, end)
+    for region_start, window_length in tiling:
         arr, arr_read_summary, counter = _run_one_window(
             samfile, 
             region_start, 
@@ -148,7 +143,6 @@ def build_windows(alignment_file: str, region: str, window_length: int,
         file_name = f'w-{reference_name}-{region_start}-{region_end}.reads.fas'
         if len(arr) >= max(minimum_reads, 1):
 
-            # TODO write to file earlier to free up memory
             _write_to_file(arr, file_name) 
 
             line = (
@@ -157,12 +151,18 @@ def build_windows(alignment_file: str, region: str, window_length: int,
             )
             cov_arr.append(line)
 
-            arr_read_summary_all.extend(arr_read_summary)
+            for read in arr_read_summary:
+                # TODO reads.fas not FASTA conform, +-0/1 mixed
+                # TODO global end does not really make sense, only for conformance
+                # read name, global start, global end, read start, read end, read
+                reads.write(
+                    f'{read[0]}\t{tiling[0][0]-1}\t{end + (tiling[1][0]-tiling[0][0])*3}\t{read[1]}\t{read[2]}\t{read[3]}\n'
+                )
         
     samfile.close()
+    reads.close()
 
     _write_to_file(cov_arr, "coverage.txt")
-    _write_to_file(arr_read_summary_all, "reads.fas")
     
 
 if __name__ == "__main__":
@@ -195,12 +195,12 @@ if __name__ == "__main__":
     if args.d != None:
         raise NotImplementedError('This argument was deprecated.')
 
-    window_length = 201
+    eqsts = EquispacedTilingStrategy(args.window_length[0], args.incr[0])
+
     build_windows(
         alignment_file = args.alignment_file,
         region = args.region,
-        window_length = args.window_length[0], 
-        incr = args.incr[0], 
+        tiling_strategy= eqsts,
         minimum_overlap = args.m[0], 
         maximum_reads = args.x[0], # 1e4 / window_length, TODO why divide?
         minimum_reads = args.c[0]

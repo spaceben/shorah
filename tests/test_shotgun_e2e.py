@@ -1,5 +1,6 @@
 import subprocess
 import filecmp
+# TODO run through Python directly
 
 def test_e2e_shorah():
     original = subprocess.run(
