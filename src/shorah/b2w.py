@@ -1,6 +1,5 @@
 import pysam
 from typing import Optional
-from shorah import tiling
 from shorah.tiling import TilingStrategy, EquispacedTilingStrategy
 
 def _parse_region(region):
@@ -20,7 +19,6 @@ def _run_one_window(samfile, region_start, reference_name, window_length,
 
     arr = []
     arr_read_summary = []
-    counter_unchanged = True
 
     iter = samfile.fetch(
         reference_name, 
@@ -56,8 +54,8 @@ def _run_one_window(samfile, region_start, reference_name, window_length,
         full_read = ("".join(full_read))
         
         if (first_aligned_pos < region_start + window_length - minimum_overlap
-                and last_aligned_post >= region_start + minimum_overlap - 3): 
-                # TODO justify 3
+                and last_aligned_post >= region_start + minimum_overlap - 3 # TODO justify 3
+                and len(full_read) >= minimum_overlap): 
 
             cut_out_read = full_read[s]
 
@@ -80,11 +78,8 @@ def _run_one_window(samfile, region_start, reference_name, window_length,
             arr_read_summary.append(
                 (read.query_name, read.reference_start + 1, read.reference_end, full_read)
             )
-            counter = read.reference_start
-            counter_unchanged = False
 
-    if not counter_unchanged:
-        counter = counter + 1
+    counter = region_start + window_length
 
     return arr, arr_read_summary, counter
 
@@ -129,7 +124,8 @@ def build_windows(alignment_file: str, region: str,
     reads = open("reads.fas", "w")
     counter = 0
     tiling = tiling_strategy.get_window_tilings(start, end)
-    for region_start, window_length in tiling:
+    print(tiling)
+    for idx, (region_start, window_length) in enumerate(tiling):
         arr, arr_read_summary, counter = _run_one_window(
             samfile, 
             region_start, 
@@ -141,7 +137,21 @@ def build_windows(alignment_file: str, region: str,
         )
         region_end = region_start + window_length - 1
         file_name = f'w-{reference_name}-{region_start}-{region_end}.reads.fas'
-        if len(arr) >= max(minimum_reads, 1):
+
+        # TODO solution for backward conformance
+        end_extended_by_a_window = end + (tiling[1][0]-tiling[0][0])*3
+        for read in arr_read_summary:
+            if idx == len(tiling) - 1 and read[1] > end_extended_by_a_window:
+                continue
+            # TODO reads.fas not FASTA conform, +-0/1 mixed
+            # TODO global end does not really make sense, only for conformance
+            # read name, global start, global end, read start, read end, read
+            reads.write(
+                f'{read[0]}\t{tiling[0][0]-1}\t{end_extended_by_a_window}\t{read[1]}\t{read[2]}\t{read[3]}\n'
+            )
+        
+        # except last
+        if len(arr) >= max(minimum_reads, 1) and idx != len(tiling) - 1:
 
             _write_to_file(arr, file_name) 
 
@@ -150,14 +160,6 @@ def build_windows(alignment_file: str, region: str,
                 f'{region_end}\t{len(arr)}'
             )
             cov_arr.append(line)
-
-            for read in arr_read_summary:
-                # TODO reads.fas not FASTA conform, +-0/1 mixed
-                # TODO global end does not really make sense, only for conformance
-                # read name, global start, global end, read start, read end, read
-                reads.write(
-                    f'{read[0]}\t{tiling[0][0]-1}\t{end + (tiling[1][0]-tiling[0][0])*3}\t{read[1]}\t{read[2]}\t{read[3]}\n'
-                )
         
     samfile.close()
     reads.close()

@@ -44,7 +44,7 @@ class EquispacedTilingStrategy(TilingStrategy):
     """
 
     def __init__(self, window_length=201, incr=201//3, 
-        exact_conformance_overlap_at_boundary=False):
+        exact_conformance_overlap_at_boundary=False) -> None:
 
         if window_length%incr != 0 or incr <= 0 or window_length <= 0:
             raise ValueError("window_length has to be divisible by incr")
@@ -62,5 +62,13 @@ class EquispacedTilingStrategy(TilingStrategy):
             end + 1 - (self.window_length//self.incr - 3) * self.incr if self.exact_conformance_overlap_at_boundary else end + 1, 
             self.incr 
         ))
+
+        # add one more window at the end
+        if self.exact_conformance_overlap_at_boundary == True:
+            window_positions.append(window_positions[-1] + self.incr)
         
         return [(i, self.window_length) for i in window_positions]
+
+class PrimerTilingStrategy(TilingStrategy):
+    def __init__(self, primer_path: str) -> None:
+        pass
