@@ -117,9 +117,10 @@ def build_windows(alignment_file: str, region: str,
         minimum_overlap: Minimum number of bases to overlap between reference
             and read to be considered in a window. The rest (i.e. 
             non-overlapping part) will be filled with Ns.
-        maximum_reads: Upper (inclusive) limit of reads allowed in a window.
-            Serves to reduce computational load.
-        minimum_reads: Lower (inclusive) limit of reads allowed in a window.
+        maximum_reads: Upper (exclusive) limit of reads allowed to start at the
+            same position in the reference genome. Serves to reduce 
+            computational load.
+        minimum_reads: Lower (exclusive) limit of reads allowed in a window.
             Serves to omit windows with low coverage.
         reference_filename: Path to a FASTA file of the reference sequence.
             Only necessary if this information is not included in the CRAM file.
@@ -171,16 +172,16 @@ def build_windows(alignment_file: str, region: str,
                 f'{read[0]}\t{tiling[0][0]-1}\t{end_extended_by_a_window}\t{read[1]}\t{read[2]}\t{read[3]}\n'
             )
         
-        # except last
-        if len(arr) >= max(minimum_reads, 1) and idx != len(tiling) - 1:
+        if idx != len(tiling) - 1: # except last
 
             _write_to_file(arr, file_name) 
 
-            line = (
-                f'{file_name}\t{reference_name}\t{region_start}\t'
-                f'{region_end}\t{len(arr)}'
-            )
-            cov_arr.append(line)
+            if len(arr) > minimum_reads: 
+                line = (
+                    f'{file_name}\t{reference_name}\t{region_start}\t'
+                    f'{region_end}\t{len(arr)}'
+                )
+                cov_arr.append(line)
         
     samfile.close()
     reads.close()
