@@ -14,8 +14,8 @@ class TilingStrategy(ABC):
         Returns:
             A list of tuples that indicate the starting point and length of
             each window. It is assumed that this list is **sorted** by starting 
-            points ascending. First integer is the starting position, second the 
-            window length. For example (with fixed window length 201)::
+            points ascending. First integer is the **0-based** starting position, 
+            second the window length. For example (with fixed window length 201)::
 
                 [(0, 201), (67, 201), (134, 201), (201, 201)]
 
@@ -101,9 +101,12 @@ class EquispacedTilingStrategy(TilingStrategy):
         if self.use_full_reference_as_region == True:
             window_positions = list(range(
                 0,
-                self.end, 
+                self.end - 1,
                 self.incr
             ))    
+            while window_positions[-1] + self.window_length >= self.end:
+                del window_positions[-1]
+            print(window_positions)
         else:
             window_positions = list(range(
                 self.start - self.incr * 3 if self.exact_conformance_overlap_at_boundary 

@@ -438,6 +438,8 @@ def main(args):
             strategy = tiling.EquispacedTilingStrategy(region, win_length, incr, True)
         else:
             strategy = tiling.PrimerTilingStrategy(path_insert_file)
+            if region != "":
+                logging.warn(f"region is set to {region} but is not used with this tiling strategy")
 
         logging.info(f"Using tiling strategy: {type(strategy).__name__}")
 
