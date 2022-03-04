@@ -206,6 +206,8 @@ def getSNV(ref, segCov, incr, window_thresh=0.9):
     """Parses SNV from all windows and output the dictionary with all the
     information
     """
+
+    # TODO remove 
     snpD = {}
     single_window = False
     try:
@@ -292,16 +294,18 @@ def getSNV(ref, segCov, incr, window_thresh=0.9):
             break
 
     cov_file.close()
+    # TODO remove
 
     with open('coverage.txt') as cov_file, open('raw_snv.tsv', 'w') as f:
         for i in cov_file:
             snp = parseWindow(i, ref, window_thresh)
-            for k, val in sorted(snp.items()):
+            for _, val in sorted(snp.items()):
                 f.write('\t'.join(map(str, [val.chrom, val.pos, val.ref, val.var, val.freq, val.support])) + "\n")
 
     return snpD
 
 
+# TODO remove
 def printRaw(snpD2, incr):
     """Print the SNPs as they are obtained from the support files produced
         with shorah (raw calls). raw_snv.txt has all of them, SNV.txt only
@@ -394,6 +398,7 @@ def sb_filter(in_bam, file_to_append, out_file_prefix, sigma, amplimode="",
     return retcode
 
 
+# TODO is last column
 def BH(p_vals, n):
     """performs Benjamini Hochberg procedure, returning q-vals'
        you can also see http://bit.ly/QkTflz
@@ -451,6 +456,7 @@ def main(args):
         shutil.move('snv/SNV.txt', './')
 
     d = ' -d' if ignore_indels else ''
+    
     a = ' -a' if increment == 1 else ''
     # run strand bias filter, output in SNVs_%sigma.txt
     retcode_m = sb_filter(bam_file, "raw_snv.tsv", "raw_snvs_", sigma, amplimode=a, drop_indels=d,
@@ -480,6 +486,7 @@ def main(args):
     # sort p values, correct with Benjamini Hochberg and append to output
     p_vals_m.sort()
     q_vals = BH(p_vals_m, len(p_vals_m))
+    logging.debug(q_vals)
     for q, i3 in q_vals:
         write_list[i3].append(q)
 
@@ -500,78 +507,3 @@ def main(args):
             for wl in write_list:
                 if wl[-1] >= 0.05:
                     writer.writerow(wl)
-
-    # Write VCF output file
-    if 'vcf' in args.format:
-        VCF_file = f'{os.path.splitext(snpFile)[0]}_final.vcf'
-        VCF_meta = [
-            '##fileformat=VCFv4.2',
-            f'##fileDate={date.today():%Y%m%d}',
-            f'##source=ShoRAH_{args.version}',
-            f'##reference={args.f}'
-        ]
-        for ref_name, ref_seq in ref_m.items():
-            VCF_meta.append(f'##contig=<ID={ref_name},length={len(ref_seq)}>',)
-        VCF_meta.extend([
-            '##INFO=<ID=Fvar,Number=1,Type=Integer,Description="Number of forward reads with variant">',
-            '##INFO=<ID=Rvar,Number=1,Type=Integer,Description="Number of reverse reads with variant">',
-            '##INFO=<ID=Ftot,Number=1,Type=Integer,Description="Total number of forward reads">',
-            '##INFO=<ID=Rtot,Number=1,Type=Integer,Description="Total number of reverse reads">',
-            '##INFO=<ID=Pval,Number=1,Type=Float,Description="P-value for strand bias">',
-            '##INFO=<ID=Qval,Number=1,Type=Float,Description="Q-value for strand bias">'
-        ])
-
-        if increment == 1:
-            VCF_meta.extend([
-                '##INFO=<ID=Freq<X>,Number=1,Type=Float,Description="Frequency of the variant">',
-                '##INFO=<ID=Post<X>,Number=1,Type=Float,Description="Posterior probability of the variant">',
-            ])
-        else:
-            VCF_meta.extend([
-                '##INFO=<ID=Freq1,Number=1,Type=Float,Description="Frequency of the variant in window 1">',
-                '##INFO=<ID=Freq2,Number=1,Type=Float,Description="Frequency of the variant in window 2">',
-                '##INFO=<ID=Freq3,Number=1,Type=Float,Description="Frequency of the variant in window 3">',
-                '##INFO=<ID=Post1,Number=1,Type=Float,Description="Posterior probability of the variant in window 1">',
-                '##INFO=<ID=Post2,Number=1,Type=Float,Description="Posterior probability of the variant in window 2">',
-                '##INFO=<ID=Post3,Number=1,Type=Float,Description="Posterior probability of the variant in window 3">',
-            ])
-
-        with open(VCF_file, 'w') as vcf:
-            vcf.write('\n'.join(VCF_meta))
-            # VCFv4.2 HEADER line
-            vcf.write('\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO')
-            # Iterate over single SNV lines and write them to output file
-            for wl in write_list:
-                # only print when q >= 5%
-                if wl[-1] >= 0.05:
-                    info = f'Fvar={wl[-6]};Rvar={wl[-5]};Ftot={wl[-4]};' \
-                        f'Rtot={wl[-3]};Pval={wl[-2]};Qval={wl[-1]}'
-                    if increment == 1:
-                        post_avg = min([1, float(wl[5])])
-                        info = f'Freq={wl[4]};Post={wl[5]};' + info
-                    else:
-                        freq_str = ';'.join([f'Freq{i+1}={j}'
-                            for i, j in enumerate(wl[4:7]) if j != '*'])
-                        post_str = ';'.join([f'Post{i+1}={j}'
-                            for i, j in enumerate(wl[7:10]) if j != '*'])
-                        info = f'{freq_str};{post_str};{info}'.replace('-', '0')
-                        post_all = []
-                        for freq, post in zip(wl[4:7], wl[7:10]):
-                            if freq == '*':
-                                pass
-                            elif freq == '-':
-                                post_all.append(0)
-                            else:
-                                post_all.append(min([1, float(post)]))
-                        # Calculate posterior average
-                        post_avg = sum(post_all) / len(post_all)
-                    # Calculate a Phred quality score where the base calling
-                    # error probabilities is set to (1 - posterior avg).
-                    # Maximum is set to 100.
-                    try:
-                        qual_norm = -10 * log10(1 - post_avg)
-                    except ValueError:
-                        qual_norm = 100
-
-                    vcf.write(f'\n{wl[0]}\t{wl[1]}\t.\t{wl[2]}\t{wl[3]}'
-                              f'\t{qual_norm}\tPASS\t{info}')
