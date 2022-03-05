@@ -284,7 +284,6 @@ def main(args):
 
     # sort p values, correct with Benjamini Hochberg and append to output
     p_vals.sort()
-    print(p_vals)
     q_vals = BH(p_vals, len(p_vals))
 
     for q, indices in q_vals:

@@ -134,7 +134,7 @@ def main():
                                help="pos threshold when calling variants from support files")
 
     parent_parser.add_argument('-of', '--out_format', type=str, dest='format',
-                               default=['csv', 'vcf'], nargs='+',
+                               default=['csv'], nargs='+',
                                choices=['csv', 'vcf'],
                                help='output format of called SNVs')
 
