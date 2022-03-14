@@ -55,6 +55,8 @@ class SNV:
     freq: float = 0.0
     support: float = 0.0
 
+standard_header_row = ['Chromosome', 'Pos', 'Ref', 'Var', 'Frq', 'Pst']
+
 
 def deletion_length(seq):
     """Determines the length of the deletion. Note that a sequence migth have
@@ -172,6 +174,8 @@ def parseWindow(line, ref1, threshold=0.9):
         v.support /= v.freq
         v.freq /= reads
 
+    window.close() # TODO
+
     return snp
 
 
@@ -181,6 +185,7 @@ def getSNV(ref, window_thresh=0.9):
     """
 
     with open('coverage.txt') as cov_file, open('raw_snv.tsv', 'w') as f:
+        f.write('\t'.join(standard_header_row) + '\n')
         for i in cov_file:
             snp = parseWindow(i, ref, window_thresh)
             for _, val in sorted(snp.items()):
@@ -293,8 +298,7 @@ def main(args):
     # Write ShoRAH csv output file
     if 'csv' in args.format: 
         csv_file = '{}_final.csv'.format(os.path.splitext(snpFile)[0])
-        header_row = ['Chromosome', 'Pos', 'Ref', 'Var', 'Frq', 'Pst', 'Fvar', 
-                        'Rvar', 'Ftot', 'Rtot', 'Pval', 'Qval']
+        header_row = standard_header_row + ['Fvar', 'Rvar', 'Ftot', 'Rtot', 'Pval', 'Qval']
         with open(csv_file, 'w') as cf:
             writer = csv.writer(cf)
             writer.writerow(header_row)
