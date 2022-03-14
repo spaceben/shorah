@@ -1,5 +1,4 @@
 import pysam
-from typing import Optional
 from shorah.tiling import TilingStrategy, EquispacedTilingStrategy
 
 def _write_to_file(lines, file_name):
@@ -92,7 +91,7 @@ def _run_one_window(samfile, window_start, reference_name, window_length,
 
 def build_windows(alignment_file: str, tiling_strategy: TilingStrategy, 
     minimum_overlap: int, maximum_reads: int, minimum_reads: int, 
-    reference_filename: Optional[str] = None) -> None:
+    reference_filename: str) -> None:
     """Summarizes reads aligned to reference into windows. 
 
     Three products are created:
@@ -127,6 +126,7 @@ def build_windows(alignment_file: str, tiling_strategy: TilingStrategy,
         reference_filename=reference_filename,
         threads=1
     )
+    reffile = pysam.FastaFile(reference_filename)
 
     cov_arr = []
     reads = open("reads.fas", "w")
@@ -152,7 +152,7 @@ def build_windows(alignment_file: str, tiling_strategy: TilingStrategy,
             counter
         )
         window_end = window_start + window_length - 1
-        file_name = f'w-{reference_name}-{window_start}-{window_end}.reads.fas'
+        file_name = f'w-{reference_name}-{window_start}-{window_end}'
 
         # TODO solution for backward conformance
         end_extended_by_a_window = region_end + (tiling[1][0]-tiling[0][0])*3
@@ -168,11 +168,15 @@ def build_windows(alignment_file: str, tiling_strategy: TilingStrategy,
         
         if idx != len(tiling) - 1: # except last
 
-            _write_to_file(arr, file_name) 
+            _write_to_file(arr, file_name + '.reads.fas') 
+            _write_to_file([
+                f'>{reference_name} {window_start}\n' +
+                reffile.fetch(reference=reference_name, start=window_start-1, end=window_end)
+            ], file_name + '.ref.fas')
 
             if len(arr) > minimum_reads: 
                 line = (
-                    f'{file_name}\t{reference_name}\t{window_start}\t'
+                    f'{file_name}.reads.fas\t{reference_name}\t{window_start}\t'
                     f'{window_end}\t{len(arr)}'
                 )
                 cov_arr.append(line)
