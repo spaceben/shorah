@@ -109,8 +109,8 @@ class EquispacedTilingStrategy(TilingStrategy):
             print(window_positions)
         else:
             window_positions = list(range(
-                self.start - self.incr * 3 if self.exact_conformance_overlap_at_boundary 
-                    else self.start - self.window_length,
+                self.start - self.incr * 3 if self.exact_conformance_overlap_at_boundary
+                    else self.start - self.window_length, # this is 1-based
                 self.end + 1 - (self.window_length//self.incr - 3) * self.incr if self.exact_conformance_overlap_at_boundary 
                     else self.end + 1, # TODO why +1
                 self.incr 

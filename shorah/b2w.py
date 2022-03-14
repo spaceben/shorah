@@ -1,4 +1,5 @@
 import pysam
+from typing import Optional
 from shorah.tiling import TilingStrategy, EquispacedTilingStrategy
 
 def _write_to_file(lines, file_name):
@@ -91,7 +92,7 @@ def _run_one_window(samfile, window_start, reference_name, window_length,
 
 def build_windows(alignment_file: str, tiling_strategy: TilingStrategy, 
     minimum_overlap: int, maximum_reads: int, minimum_reads: int, 
-    reference_filename: str) -> None:
+    reference_filename: str, fix_minus_1_0_1: Optional[bool] = False) -> None:
     """Summarizes reads aligned to reference into windows. 
 
     Three products are created:
@@ -116,7 +117,7 @@ def build_windows(alignment_file: str, tiling_strategy: TilingStrategy,
         minimum_reads: Lower (exclusive) limit of reads allowed in a window.
             Serves to omit windows with low coverage.
         reference_filename: Path to a FASTA file of the reference sequence.
-            Only necessary if this information is not included in the CRAM file.
+        fix_minus_1_0_1: TODO
     """
 
     pysam.index(alignment_file)
@@ -170,7 +171,7 @@ def build_windows(alignment_file: str, tiling_strategy: TilingStrategy,
 
             _write_to_file(arr, file_name + '.reads.fas') 
             _write_to_file([
-                f'>{reference_name} {window_start}\n' +
+                f'>{reference_name} {window_start}\n' + # window_start is 1-based
                 reffile.fetch(reference=reference_name, start=window_start-1, end=window_end)
             ], file_name + '.ref.fas')
 
