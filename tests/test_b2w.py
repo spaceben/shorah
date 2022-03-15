@@ -70,6 +70,7 @@ def test_cmp_raw(spec_dir, alignment_file, reference_file, region, window_length
         maximum_reads = maximum_reads,
         minimum_reads = minimum_reads,
         reference_filename = os.path.join(p, spec_dir, reference_file),
+        exact_conformance_fix_0_1_basing_in_reads = False,
     )
 
     spec_files = _collect_files(os.path.join(p, spec_dir))
